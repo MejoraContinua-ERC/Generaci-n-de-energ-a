@@ -88,6 +88,8 @@
   tbody tr.on td:first-child{color:var(--navy);font-weight:640}
   .gpos{color:var(--celeste);font-weight:600}
   .hide{display:none}
+  footer{max-width:520px;margin:20px auto 0;padding:16px 16px 0;border-top:1px solid var(--line);text-align:center;font-size:12px;color:var(--muted)}
+  body.grayscale{filter:grayscale(100%);-webkit-filter:grayscale(100%)}
 </style>
 </head>
 <body>
@@ -163,6 +165,7 @@
     <div class="daysum" id="daySum"></div>
     <div class="tbl"><table><thead id="dayHead"></thead><tbody id="dayBody"></tbody></table></div>
   </div>
+  <footer>Procesos &amp; Mejora Continua</footer>
 </div>
 
 <script>
@@ -201,6 +204,7 @@ const YEARS = Object.keys(DATA[PLANTS[0]]).sort();
 const MESES = DATA[PLANTS[0]][YEARS[YEARS.length-1]].map(m=>m.mes);
 const MESL=["Enero","Febrero","Marzo","Abril","Mayo","Junio","Julio","Agosto","Septiembre","Octubre","Noviembre","Diciembre"];
 const MESLB=MESL.map(m=>m.toLowerCase());
+const CHIP={"OXEC II":"OX2","OXEC":"OXE","RAAXHÁ":"RAA","PACAYAS":"PYS","VDA":"VDA"};
 const GEN="#00A9E0", PROY="#004B87", GRID="#E6EEF5", TICK="#5E7C97";
 const fmt=n=>Math.round(n).toLocaleString("es-GT");
 const mwh=n=>fmt(n)+" MWh";
@@ -231,6 +235,7 @@ function lastDay(sel,y){for(let m=11;m>=0;m--){const dr=dayRows(sel,y,m);for(let
 function hasComp(sel,y){return monthAgg(sel,y).some(x=>x.comp>0);}
 
 function render(){
+  document.body.classList.toggle("grayscale", year==="2025");
   const r=monthAgg(sel,year);
   const genY=r.reduce((s,x)=>s+x.gen,0);
   const closed=r.filter(x=>x.gen>0);
@@ -339,7 +344,7 @@ YEARS.forEach(y=>{const b=document.createElement("button");b.textContent=y;b.set
   b.onclick=()=>{year=y;[...yearSeg.children].forEach(c=>c.setAttribute("aria-pressed",c===b));
     selMi=lastWithData(sel,year);selDay=null;dsel.min=year+"-01-01";dsel.max=year+"-12-31";dsel.value="";msel.value=selMi;render();};yearSeg.appendChild(b);});
 const chipsEl=document.getElementById("chips");
-[["TODAS","Todas"],...PLANTS.map(p=>[p,p])].forEach(([id,label])=>{const b=document.createElement("button");
+[["TODAS","Todas"],...PLANTS.map(p=>[p,CHIP[p]||p])].forEach(([id,label])=>{const b=document.createElement("button");
   b.className="chip";b.textContent=label;b.setAttribute("aria-pressed",id===sel);
   b.onclick=()=>{sel=id;[...chipsEl.children].forEach(c=>c.setAttribute("aria-pressed",c===b));render();};chipsEl.appendChild(b);});
 const msel=document.getElementById("monthSel");
