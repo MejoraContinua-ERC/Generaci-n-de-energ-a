@@ -119,13 +119,26 @@
     </div>
   </div>
 
+  <div class="hero">
+    <div class="num">
+      <div class="lbl">Proyección anual</div>
+      <div class="big"><span id="proyAnual">0</span><span class="unit">MWh</span></div>
+      <div class="sub">Generación proyectada del año</div>
+    </div>
+    <div class="ring">
+      <svg width="92" height="92" viewBox="0 0 92 92">
+        <circle cx="46" cy="46" r="40" fill="none" stroke="var(--ring-track)" stroke-width="9"/>
+        <circle id="ringFill2" cx="46" cy="46" r="40" fill="none" stroke="var(--celeste)" stroke-width="9" stroke-linecap="round" stroke-dasharray="251.3" stroke-dashoffset="251.3"/>
+      </svg>
+      <div class="pct"><b id="avance">0%</b><span>avance del año</span></div>
+    </div>
+  </div>
+
   <div class="stats">
     <div class="stat"><div class="lbl" id="kDiaLbl">Generación diaria</div>
       <div class="kpi3"><span><b id="kDiaGen">–</b><i>MWh generado</i></span><span><b id="kDiaProy">–</b><i>MWh proyectado</i></span><span><b id="kDiaPct">–</b><i>alcanzado</i></span></div></div>
     <div class="stat"><div class="lbl" id="kMesLbl">Mes</div>
       <div class="kpi3"><span><b id="kMesGen">–</b><i>MWh generado</i></span><span><b id="kMesProy">–</b><i>MWh proyectado</i></span><span><b id="kMesPct">–</b><i>alcanzado</i></span></div></div>
-    <div class="stat"><div class="lbl">Proyección anual</div><div class="val"><span id="proyAnual">0</span> <small>MWh</small></div></div>
-    <div class="stat"><div class="lbl">Avance del año</div><div class="val" id="avance">0%</div></div>
   </div>
 
   <div class="card">
@@ -236,6 +249,7 @@ function hasComp(sel,y){return monthAgg(sel,y).some(x=>x.comp>0);}
 
 function render(){
   document.body.classList.toggle("grayscale", year==="2025");
+  const _ld=lastDay("TODAS",YEARS[YEARS.length-1]); if(_ld){document.getElementById("asof").textContent="Datos al día · "+_ld.d+" de "+MESLB[_ld.mi]+" de "+YEARS[YEARS.length-1];}
   const r=monthAgg(sel,year);
   const genY=r.reduce((s,x)=>s+x.gen,0);
   const closed=r.filter(x=>x.gen>0);
@@ -250,6 +264,7 @@ function render(){
   gHeroSub.textContent="Meta a la fecha: "+mwh(proyPer);
   gProyAnual.textContent=fmt(proyAnual);
   gAvance.textContent=Math.round(pctAnual*100)+"%";
+  gRingFill2.setAttribute("stroke-dashoffset",251.3*(1-Math.min(pctAnual,1)));
 
   const ld=lastDay(sel,year);
   if(ld){kDiaLbl.textContent="Generación del "+ld.d+" de "+MESLB[ld.mi];
@@ -285,12 +300,12 @@ function renderBars(r){
   const ymax = sel==="TODAS" ? 50000 : undefined;
   chBars=new Chart(document.getElementById("bars"),{type:"bar",
     data:{labels:MESES,datasets:[
-      {label:"Generado",data:r.map(x=>x.gen),backgroundColor:GEN,borderRadius:3},
-      {label:"Proyectado",data:r.map(x=>x.proy),backgroundColor:PROY,borderRadius:3}]},
+      {label:"Proyectado",data:r.map(x=>x.proy),backgroundColor:PROY,borderRadius:3},
+      {label:"Generado",data:r.map(x=>x.gen),backgroundColor:GEN,borderRadius:3}]},
     options:{responsive:true,maintainAspectRatio:false,layout:{padding:{top:24}},
       plugins:{legend:{position:"bottom",labels:legendSquares},
         tooltip:{callbacks:{label:c=>c.dataset.label+": "+mwh(c.raw)}},
-        datalabels:{display:true,anchor:"end",align:"end",rotation:-90,offset:2,font:{size:8},color:TICK,formatter:v=>v?fmt(v):""}},
+        datalabels:{display:false}},
       scales:{y:{beginAtZero:true,max:ymax,title:{display:true,text:"MWh",color:TICK,font:{size:10}},grid:{color:GRID},ticks:{font:{size:10},callback:v=>v>=1000?(v/1000)+"k":v}},
         x:{grid:{display:false},ticks:{font:{size:10}}}}}});
 }
@@ -301,11 +316,10 @@ function renderCum(r){
   r.forEach(x=>{pa+=x.proy;proyA.push(pa);if(x.gen>0){ga+=x.gen;genA.push(ga);}else genA.push(null);});
   chCum=new Chart(document.getElementById("cum"),{type:"line",
     data:{labels:MESES,datasets:[
-      {label:"Generado",data:genA,borderColor:GEN,backgroundColor:GEN,tension:.25,spanGaps:false,pointRadius:2,borderWidth:3,
-        datalabels:{display:ctx=>ctx.dataset.data[ctx.dataIndex]!=null,anchor:"end",align:"top",rotation:-90,offset:6,color:GEN,font:{size:8,weight:"bold"},formatter:v=>v?fmt(v):""}},
-      {label:"Proyectado",data:proyA,borderColor:PROY,backgroundColor:PROY,borderDash:[5,4],tension:.25,pointRadius:2,borderWidth:2,
-        datalabels:{display:true,anchor:"start",align:"bottom",rotation:-90,offset:6,color:PROY,font:{size:8},formatter:v=>fmt(v)}}]},
-    options:{responsive:true,maintainAspectRatio:false,layout:{padding:{top:30,bottom:10,right:14,left:6}},
+      {label:"Proyectado",data:proyA,borderColor:PROY,backgroundColor:PROY,borderDash:[5,4],tension:.25,pointRadius:2,borderWidth:2,datalabels:{display:false}},
+      {label:"Generado",data:genA,borderColor:GEN,backgroundColor:GEN,tension:.25,spanGaps:false,pointRadius:2,borderWidth:3,datalabels:{display:false}}]},
+    options:{responsive:true,maintainAspectRatio:false,layout:{padding:{top:14,bottom:6,right:14,left:6}},
+      interaction:{mode:"index",intersect:false},
       plugins:{legend:{position:"bottom",labels:legendSquares},
         tooltip:{callbacks:{label:c=>c.dataset.label+": "+(c.raw==null?"—":mwh(c.raw))}}},
       scales:{y:{beginAtZero:true,title:{display:true,text:"MWh",color:TICK,font:{size:10}},grid:{color:GRID},ticks:{font:{size:10},callback:v=>v>=1000?(v/1000)+"k":v}},
@@ -327,7 +341,7 @@ function renderDaily(){
   dayHead.innerHTML="<tr><th>Fecha</th><th>Generado (MWh)</th><th>Proyectado (MWh)</th><th>%</th></tr>";
   const dr=dayRows(sel,year,selMi);
   let tg=0,tp=0,any=false;dr.forEach(x=>{if(x.g!=null){tg+=x.g;any=true;}tp+=(x.p||0);});
-  daySum.innerHTML=any?`${MESL[selMi]} ${year}: <b>${mwh(tg)}</b> generado · meta <b>${mwh(tp)}</b> · <b>${Math.round(tg/tp*100)}%</b>`:`${MESL[selMi]} ${year}: sin registro · meta <b>${mwh(tp)}</b>`;
+  daySum.innerHTML=any?`<div class="lbl">${MESL[selMi]} ${year}</div><div class="kpi3"><span><b>${fmt(tg)}</b><i>MWh generado</i></span><span><b>${fmt(tp)}</b><i>MWh proyectado</i></span><span><b>${Math.round(tg/tp*100)}%</b><i>alcanzado</i></span></div>`:`<div class="lbl">${MESL[selMi]} ${year}</div><div class="kpi3"><span><b>—</b><i>sin registro</i></span><span><b>${fmt(tp)}</b><i>MWh proyectado</i></span><span><b>—</b><i>alcanzado</i></span></div>`;
   let body="";
   dr.forEach(x=>{const nd=x.g==null,on=selDay&&selDay.mi===selMi&&selDay.d===x.d;const pct=(!nd&&x.p)?Math.round(x.g/x.p*100)+"%":"—";
     body+=`<tr class="${nd?'nd':''} ${on?'on':''}" data-d="${x.d}"><td>${x.d} ${MESLB[selMi]}</td><td class="${nd?'':'gpos'}">${nd?'—':fmt(x.g)}</td><td>${fmt(x.p||0)}</td><td>${pct}</td></tr>`;});
@@ -359,7 +373,7 @@ const partSeg=document.getElementById("partSeg");
   b.textContent=label;b.setAttribute("aria-pressed",id===partMode);
   b.onclick=()=>{partMode=id;[...partSeg.children].forEach(c=>c.setAttribute("aria-pressed",c===b));renderPart();};partSeg.appendChild(b);});
 
-const gHeroLbl=document.getElementById("heroLbl"),gGenY=document.getElementById("genYTD"),gRingPct=document.getElementById("ringPct"),gRingFill=document.getElementById("ringFill"),
+const gHeroLbl=document.getElementById("heroLbl"),gGenY=document.getElementById("genYTD"),gRingPct=document.getElementById("ringPct"),gRingFill=document.getElementById("ringFill"),gRingFill2=document.getElementById("ringFill2"),
  gHeroSub=document.getElementById("heroSub"),gProyAnual=document.getElementById("proyAnual"),gAvance=document.getElementById("avance"),
  kDiaLbl=document.getElementById("kDiaLbl"),kDiaGen=document.getElementById("kDiaGen"),kDiaProy=document.getElementById("kDiaProy"),kDiaPct=document.getElementById("kDiaPct"),
  kMesLbl=document.getElementById("kMesLbl"),kMesGen=document.getElementById("kMesGen"),kMesProy=document.getElementById("kMesProy"),kMesPct=document.getElementById("kMesPct"),
@@ -370,8 +384,6 @@ const gHeroLbl=document.getElementById("heroLbl"),gGenY=document.getElementById(
  partCard=document.getElementById("partCard"),partTit=document.getElementById("partTit"),gPart=document.getElementById("part"),
  dayHead=document.getElementById("dayHead"),dayBody=document.getElementById("dayBody"),daySum=document.getElementById("daySum"),gPick=document.getElementById("pick");
 
-const ayer=new Date();ayer.setDate(ayer.getDate()-1);
-document.getElementById("asof").textContent="Datos al día · "+ayer.getDate()+" de "+MESLB[ayer.getMonth()]+" de "+ayer.getFullYear();
 
 selMi=lastWithData("TODAS",year);msel.value=selMi;dsel.min=year+"-01-01";dsel.max=year+"-12-31";
 render();
